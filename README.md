@@ -194,7 +194,7 @@ Rscript R/03_visualization.R
 
 ## 更新日志
 
-### Version 1.0.0 (2024-01-25)
+### Version 1.0.0 (2025-12-25)
 - 初始版本发布
 - 完成Stage 1和Stage 2的分析流程
 - 实现铁死亡评分计算和可视化
@@ -215,3 +215,4 @@ Rscript R/03_visualization.R
 - [Ferroptosis Database](http://www.zhounan.org/ferroptosis/)
 - [Seurat Documentation](https://satijalab.org/seurat/)
 - [GSE233363 on GEO](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE233363)
+
