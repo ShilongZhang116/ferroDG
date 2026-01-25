@@ -166,10 +166,10 @@ Rscript R/03_visualization.R
 
 ```bibtex
 @software{ferroDG,
-  title = {ferroDG: Ferroptosis in Dentate Gyrus Neurogenesis},
-  author = {Your Name},
-  year = {2024},
-  url = {https://github.com/yourusername/ferroDG},
+  title = { ... },
+  author = { ... },
+  year = {2026},
+  url = {https://github.com/shilongzhang/ferroDG},
 }
 ```
 
@@ -215,4 +215,5 @@ Rscript R/03_visualization.R
 - [Ferroptosis Database](http://www.zhounan.org/ferroptosis/)
 - [Seurat Documentation](https://satijalab.org/seurat/)
 - [GSE233363 on GEO](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE233363)
+
 
