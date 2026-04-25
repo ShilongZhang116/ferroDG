@@ -29,14 +29,14 @@ save_plot_local <- function(p, filename,
     bg       = "white"
   )
   
-  ## PDF（矢量，无 dpi）
+  ## PDF (vector, no dpi)
   out_pdf <- file.path(fig_dir, paste0(filename, ".pdf"))
   ggsave(
     filename = out_pdf,
     plot     = p,
     width    = width,
     height   = height,
-    device   = cairo_pdf   # 强烈推荐，避免字体/透明度问题
+    device   = cairo_pdf   # strongly recommended to avoid font/transparency issues
   )
   
   message("[Saved] ", out_png)
@@ -50,7 +50,7 @@ DefaultAssay(combined) <- "RNA"
 ## ---------------- 0.1 Age collapsed (STRICT: Young vs Old only) ----------------
 combined$Age <- combined$timepoint
 
-## 折叠原始时间点到 Young/Old；其它全部设为 NA（避免 Middle 变成 NA 后又参与绘图）
+## Collapse original timepoints into Young/Old; set all others to NA to prevent Middle from being plotted later as NA
 combined$Age_collapsed <- NA_character_
 combined$Age_collapsed[combined$Age %in% c("Young", "Young1", "Young2")] <- "Young"
 combined$Age_collapsed[combined$Age %in% c("Old", "Old1", "Old2")]       <- "Old"
@@ -67,7 +67,7 @@ neuro_ct <- c("qNSC", "nIPC", "Neuroblast", "GC")
 
 neuro <- subset(combined, subset = Celltype_Article %in% neuro_ct)
 
-## 仅保留 Young/Old，去除 NA（这一步确保 split.by 不会出现 NA 组）
+## Keep only Young/Old and remove NA values so split.by does not create an NA group
 neuro <- subset(neuro, subset = !is.na(Age_collapsed) & Age_collapsed %in% c("Young", "Old"))
 neuro$Age_collapsed <- factor(neuro$Age_collapsed, levels = c("Young", "Old"))
 
@@ -76,7 +76,7 @@ neuro$Celltype_Article <- factor(neuro$Celltype_Article, levels = neuro_ct)
 message("== Celltype × Age (neuro) ==")
 print(table(neuro$Celltype_Article, neuro$Age_collapsed, useNA = "ifany"))
 
-## 可选：快速 UMAP 看一下
+## Optional: quick UMAP check
 p_umap <- DimPlot(
   neuro,
   reduction = "umap",
@@ -102,7 +102,7 @@ ferroptosis_genes <- list(
     "G6PD","PGD","SLC1A5","GOT1",
     "CD44","CRYAB","EMC2","HSPB1","AIFM2","RPL8"
   ),
-  ## Regulator：后续仅做单基因；注意 RAS 不是基因名，保留也无妨，交集后会自动去掉
+  ## Regulator: analyzed only at the single-gene level later; note that RAS is not a gene symbol, but keeping it is fine because it will be removed after intersection
   Ferro_Regulator = c("NQO1","VDAC2","TP53","RAS")
 )
 
@@ -145,11 +145,11 @@ age_colors_B <- c("Young" = "#4DBBD5", "Middle" = "#EFC000", "Old" = "#D73027")
 age_colors_C <- c("Young" = "#3288BD", "Middle" = "#ABDDDE", "Old" = "#D53E4F")
 age_palettes <- list("A_simple" = age_colors_A, "B_neuro" = age_colors_B, "C_nature" = age_colors_C)
 
-## 现在只用 Young/Old 的两色（从你选的 palette 里取子集）
+## Use only the Young/Old two-color subset from the selected palette
 age_colors <- age_palettes[["B_neuro"]][c("Young", "Old")]
 
 ## ---------------- 4. Fig4: Promoter & Inhibitor module scores ----------------
-set.seed(1)  # 保证 AddModuleScore 可复现
+set.seed(1)  # ensure AddModuleScore is reproducible
 
 ## 4.1 Promoter score
 if (!any(grepl("^FerroPromoter", colnames(neuro@meta.data)))) {
@@ -279,7 +279,7 @@ plot_line_summary <- function(df_long, value_col,
 }
 
 ## ---------------- 5.2 Promoter score line plot ----------------
-# promoter_col 在上面 Fig4 里已经生成
+# promoter_col was already generated above in Fig4
 ferro_df_promoter <- FetchData(
   neuro,
   vars = c(promoter_col, "Age_collapsed", "Celltype_Article")
@@ -297,7 +297,7 @@ plot_line_summary(
 )
 
 ## ---------------- 5.3 Inhibitor score line plot ----------------
-# inhibitor_col 在上面 Fig4 里已经生成
+# inhibitor_col was already generated above in Fig4
 ferro_df_inhibitor <- FetchData(
   neuro,
   vars = c(inhibitor_col, "Age_collapsed", "Celltype_Article")
@@ -315,7 +315,7 @@ plot_line_summary(
 )
 
 ## ---------------- 5.4 Regulator genes: single-gene line plots ----------------
-# 每个 regulator gene 单独画一张 Fig5（避免线图过于拥挤）
+# Draw one Fig5 panel per regulator gene to avoid overcrowded line plots
 if (length(regulator_genes) > 0) {
   for (g in regulator_genes) {
     df_g <- FetchData(
@@ -349,7 +349,7 @@ message("Done: Fig5 (Promoter/Inhibitor line plots + Regulator gene line plots).
 ## ===================================================================
 
 ## ---------------- 10.0 neurogenic order ----------------
-## 如果你已有 neuro_order，就删掉这段；否则用默认顺序
+## If you already have neuro_order, remove this block; otherwise use the default order
 if (!exists("neuro_order")) {
   neuro_order <- c("qNSC", "nIPC", "Neuroblast", "GC")
 }
@@ -429,7 +429,7 @@ plot_traj_median(
 )
 
 ## ---------------- 10.4 Regulator genes trajectory (single-gene) ----------------
-## 每个 regulator gene 一张 Fig10
+## One Fig10 plot per regulator gene
 if (length(regulator_genes) > 0) {
   for (g in regulator_genes) {
     if (!g %in% rownames(neuro)) next
@@ -437,7 +437,7 @@ if (length(regulator_genes) > 0) {
     df_g_meta <- neuro@meta.data %>%
       dplyr::select(Celltype_Article, Age_collapsed)
     
-    ## gene expression 从 RNA assay 拉取（避免 meta.data 不含表达值）
+    ## Pull gene expression from the RNA assay to avoid missing expression values in meta.data
     expr_g <- FetchData(neuro, vars = g)[, 1]
     df_g_meta[[g]] <- expr_g
     
@@ -458,7 +458,7 @@ if (length(regulator_genes) > 0) {
 message("Done: Fig10 (Promoter/Inhibitor trajectories + Regulator gene trajectories).")
 
 
-## ---------------- 10.4 Volcano 图 ----------------
+## ---------------- 10.4 Volcano plot ----------------
 library(ggrepel)
 
 ## =========================================================
@@ -475,23 +475,23 @@ run_de_and_volcano <- function(
     assay = "RNA",
     slot = "data",
     min.pct = 0.1,
-    logfc.threshold = 0.0,  # 先不过滤，火山图自己阈值线
+    logfc.threshold = 0.0,  # do not pre-filter; the volcano plot uses its own threshold lines
     test.use = "wilcox",
     fc_cutoff = 0.25,
     padj_cutoff = 0.05,
-    pcap = 50,              # -log10(p_adj) 截断上限，避免极端值拉爆
-    top_label_n = 15        # 每张图最多标注多少个基因（按 p_adj 排序 + |FC|）
+    pcap = 50,              # upper cap for -log10(p_adj) to avoid extreme values dominating the scale
+    top_label_n = 15        # maximum number of genes to label per plot (ranked by p_adj and |FC|)
 ) {
   DefaultAssay(obj) <- assay
   
-  ## 只取该 celltype
+  ## Subset to the current cell type only
   sub <- subset(obj, subset = !!as.name(ident_col) == celltype)
   
-  ## 确保分组列是 factor 且只有 Young/Old
+  ## Ensure the grouping column is a factor with only Young/Old
   sub[[group_col]] <- factor(sub[[group_col]][,1], levels = c(group2, group1))
   sub <- subset(sub, subset = !is.na(!!as.name(group_col)) & !!as.name(group_col) %in% c(group1, group2))
   
-  ## 差异表达：Old vs Young
+  ## Differential expression: Old vs Young
   Idents(sub) <- sub[[group_col]][,1]
   
   de <- FindMarkers(
@@ -507,7 +507,7 @@ run_de_and_volcano <- function(
   
   de$gene <- rownames(de)
   
-  ## 兼容 Seurat 不同版本的 FC 列名
+  ## Handle FC column names across different Seurat versions
   fc_col <- dplyr::case_when(
     "avg_log2FC" %in% colnames(de) ~ "avg_log2FC",
     "avg_logFC"  %in% colnames(de) ~ "avg_logFC",
@@ -516,7 +516,7 @@ run_de_and_volcano <- function(
   )
   if (is.na(fc_col)) stop("Cannot find logFC column in FindMarkers result.")
   
-  ## 兼容 p 值列名
+  ## Handle p-value column names across different versions
   padj_col <- if ("p_val_adj" %in% colnames(de)) "p_val_adj" else if ("p_adj" %in% colnames(de)) "p_adj" else NA_character_
   if (is.na(padj_col)) stop("Cannot find adjusted p-value column in FindMarkers result.")
   
@@ -530,13 +530,13 @@ run_de_and_volcano <- function(
                    "Significant", "NS")
     )
   
-  ## 选择要标注的基因（显著里挑最强的）
+  ## Select genes to label by taking the strongest significant hits
   de_sig <- de %>%
     filter(sig == "Significant") %>%
     arrange(p_adj, desc(abs(avg_log2FC))) %>%
     head(top_label_n)
   
-  ## 火山图
+  ## Volcano plot
   p <- ggplot(de, aes(x = avg_log2FC, y = neglog10p_capped)) +
     geom_point(aes(color = sig), alpha = 0.8, size = 1.6) +
     scale_color_manual(
@@ -624,7 +624,7 @@ for (ct in neuro_types) {
 message("Done: Volcano plots for qNSC/nIPC/Neuroblast/GC (Old vs Young).")
 
 
-## 保存每个 celltype 的 DE 结果
+## Save DE results for each cell type
 for (ct in names(volcano_results)) {
   de_tbl <- volcano_results[[ct]]$de
   out_csv <- file.path(fig_dir, paste0("DE_", ct, "_Old_vs_Young.csv"))
@@ -640,8 +640,8 @@ library(pheatmap)
 library(grid)
 
 ## ---------------- 13.0 Ferroptosis genes (combine 3 categories) ----------------
-## 使用你前面已经得到的 ferroptosis_genes_use（交集后的）
-## 合并 Promoter + Inhibitor + Regulator（去重）
+## Use the previously obtained ferroptosis_genes_use object after intersection
+## Merge Promoter + Inhibitor + Regulator gene sets and remove duplicates
 ferro_genes_all <- unique(unlist(ferroptosis_genes_use))
 ferro_genes_all <- intersect(ferro_genes_all, rownames(neuro))
 
@@ -650,7 +650,7 @@ if (length(ferro_genes_all) == 0) {
 }
 
 ## ---------------- 13.1 Neurogenesis markers (+ Nestin/Nes) ----------------
-## 小鼠 Nestin 基因符号通常是 Nes；同时兼容有人直接写 Nestin 的情况
+## The mouse Nestin gene symbol is typically Nes; also keep compatibility with direct use of Nestin
 neuro_markers_raw <- c("Sox2","Hes1","Hopx","Ascl1","Dcx","Neurod1","Prox1","Calb2","Nestin","Nes")
 neuro_markers <- unique(neuro_markers_raw)
 neuro_markers <- intersect(neuro_markers, rownames(neuro))
@@ -663,10 +663,10 @@ message("Neuro markers retained: ", paste(neuro_markers, collapse = ", "))
 
 ## ---------------- 13.2 Helper: build correlation submatrix ----------------
 build_corr_sub <- function(obj, ferro_genes, neuro_genes) {
-  ## 1) 表达矩阵（按细胞）
+  ## 1) Expression matrix (by cell)
   expr_df <- FetchData(obj, vars = c(ferro_genes, neuro_genes))
   
-  ## 2) 去掉 sd==0 的变量（避免 cor 全 NA）
+  ## 2) Remove variables with sd == 0 to avoid all-NA correlations
   sd_vec   <- apply(expr_df, 2, sd, na.rm = TRUE)
   expr_df2 <- expr_df[, sd_vec > 0, drop = FALSE]
   
@@ -677,13 +677,13 @@ build_corr_sub <- function(obj, ferro_genes, neuro_genes) {
     stop("After filtering sd>0, no overlapping ferro or neurogenic markers remain.")
   }
   
-  ## 3) Spearman 相关
+  ## 3) Spearman correlation
   corr_mat <- cor(expr_df2, method = "spearman", use = "pairwise.complete.obs")
   
-  ## 4) ferro × neuro 子矩阵
+  ## 4) ferro × neuro submatrix
   corr_sub <- corr_mat[ferro_use2, neuro_use2, drop = FALSE]
   
-  ## 5) 去掉全 NA 行/列
+  ## 5) Remove rows/columns that are entirely NA
   row_keep <- apply(corr_sub, 1, function(x) any(!is.na(x)))
   col_keep <- apply(corr_sub, 2, function(x) any(!is.na(x)))
   corr_sub <- corr_sub[row_keep, col_keep, drop = FALSE]
@@ -847,13 +847,13 @@ ph_all <- pheatmap::pheatmap(
   silent       = TRUE
 )
 
-## 从 All 的聚类树中提取固定顺序
+## Extract a fixed order from the clustering tree of All
 row_order <- ph_all$tree_row$order
 col_order <- ph_all$tree_col$order
 ferro_order_fixed <- rownames(corr_all)[row_order]
 neuro_order_fixed <- colnames(corr_all)[col_order]
 
-## 保存 All（带聚类）
+## Save All with clustering
 save_pheatmap_pdf_png(
   ph_all,
   base_name = "Fig13_FixedOrder_Corr_Ferro_vs_NeuroMarkers_All",
@@ -864,7 +864,7 @@ save_pheatmap_pdf_png(
 plot_fixed_order_heatmap <- function(mat, base_name, main_title,
                                      ferro_fixed, neuro_fixed,
                                      width = 6.5, height = 10) {
-  ## 对齐到固定顺序：缺失的行/列用 NA 填充，确保三图结构一致
+  ## Align to the fixed order: fill missing rows/columns with NA to keep the three plots structurally consistent
   mat2 <- matrix(NA_real_,
                  nrow = length(ferro_fixed),
                  ncol = length(neuro_fixed),

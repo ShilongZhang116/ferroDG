@@ -212,7 +212,7 @@ ct_age_n <- neuro@meta.data %>%
     )
   )
 
-## 映射到新的 legend 变量
+## Map to the new legend variable
 neuro$Celltype_Article_legend <- as.character(neuro$Celltype_Article)
 for (i in seq_len(nrow(ct_age_n))) {
   ct <- as.character(ct_age_n$Celltype_Article[i])
@@ -226,7 +226,7 @@ neuro$Celltype_Article_legend <- factor(
                                        ct_age_n$Celltype_Article)]
 )
 
-## ---- 3) colors (保持原 Celltype 配色，仅重命名) ----
+## ---- 3) colors (keep original Celltype colors and only rename labels) ----
 celltype_colors_legend <- celltype_colors_full[neuro_ct]
 names(celltype_colors_legend) <- ct_age_n$legend_label[
   match(neuro_ct, ct_age_n$Celltype_Article)
@@ -783,19 +783,19 @@ save_pheatmap_obj <- function(ph_obj, base_name, width = 6.5, height = 10) {
 }
 
 ## ---------------- (1) unified colormap + unified breaks ----------------
-# 颜色（蓝-白-红）
+# Colors (blue-white-red)
 hm_cols <- colorRampPalette(c("#2166AC", "white", "#B2182B"))(100)
 
-# 方案A（推荐、最审稿友好）：固定相关系数范围 [-1, 1]
+# Option A (recommended and most reviewer-friendly): fix the correlation range at [-1, 1]
 global_min <- -0.5
 global_max <-  0.5
 
-# 若你更想按数据自适应范围，可改为：
+# If you prefer a data-adaptive range, change it to:
 # all_values  <- c(corr_all, corr_young, corr_old)
 # global_min  <- max(-1, min(all_values, na.rm = TRUE))
 # global_max  <- min( 1, max(all_values, na.rm = TRUE))
 
-# breaks 数量必须比 colors 多 1
+# The number of breaks must be one greater than the number of colors
 hm_breaks <- seq(global_min, global_max, length.out = length(hm_cols) + 1)
 
 ## ---------------- (2) Fig7A: All cells (defines clustering order) ----------------
@@ -810,7 +810,7 @@ ph_all_fixed <- pheatmap::pheatmap(
   silent       = TRUE
 )
 
-# 固定行列顺序（来自 All 的聚类）
+# Fix row/column order based on clustering from All
 row_order <- ph_all_fixed$tree_row$order
 col_order <- ph_all_fixed$tree_col$order
 ferro_order_fixed <- rownames(corr_all)[row_order]
@@ -823,7 +823,7 @@ plot_fixed_order_heatmap <- function(mat, base_name, main_title,
                                      ferro_fixed, neuro_fixed,
                                      width = 6.5, height = 10,
                                      hm_cols, hm_breaks) {
-  # 用 All 的行列顺序构造一个完整矩阵；缺失用 NA 填充，保证三图结构可比
+  # Use the row/column order from All to build a complete matrix; fill missing entries with NA to make the three plots comparable
   mat2 <- matrix(
     NA_real_,
     nrow = length(ferro_fixed),
